@@ -5,15 +5,17 @@ import cors from "cors";
 import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from "url";
+import sgMail from "@sendgrid/mail";  
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config();
 const app = express();
 app.use(cors({
-  origin: "*",  
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin: "https://casadaeternapaz.onrender.com", // porta do Vite
+  methods: ["POST",  "GET"],
+  allowedHeaders: ["Content-Type"],
 }));
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 app.use(express.json());
 app.use("/paginas", express.static(path.join(__dirname, "paginas")));
 
@@ -67,31 +69,33 @@ app.post("/api/download", async (req, res) => {
 });
 
 app.post("/api/rece", async (req, res) => {
-  console.log("➡️  /api/recebe foi chamado");
+  const { email, nome, idade, mensagem } = req.body;
+
+  // Validação básica
+  if (!nome || !email || !mensagem) {
+    return res.status(400).json({ sucesso: false, erro: "Campos obrigatórios" });
+  }
 
   try {
-    const { email, mensagem, idade, nome} = req.body;
-    const check = validarEntrada(nome, idade, email, mensagem);
-    if(check){
-      return res.status(400).json({
-        sucesso: false,
-        erro: check,
-      })
-    }
+    const msg = {
+      to: "miguel.costa@ufu.br", // Destino
+      from: process.env.EMAIL_FROM, // Deve ser um e-mail verificado no SendGrid
+      subject: `Candidatura de ${nome}, idade: ${idade} com email: ${email}`,
+      text: mensagem,
+    };
 
-    const r = await enviaEmail(email, nome, idade, mensagem);
-    console.log("➡️  Resultado do email:", r);
- 
-    return res.json({ sucesso: true, msg: "Email enviado!" });
+    await sgMail.send(msg);
+    console.log("✅ Email enviado via SendGrid");
+
+    res.json({ sucesso: true, msg: "Email enviado!" });
   } catch (err) {
-    console.log("❌ ERRO DETECTADO:");
-    console.log(err);
-
-    return res.status(500).json({
-      sucesso: false,
-      erro: err?.message || err
-    });
+    console.log("❌ Erro ao enviar email:", err);
+    res.status(500).json({ sucesso: false, erro: err.message });
   }
+});
+
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Servidor rodando");
 });
 function validarEntrada( nome, idade, email, mensagem) {
 
@@ -118,20 +122,24 @@ function validarEntrada( nome, idade, email, mensagem) {
   return null; // passou
 }
 async function  enviaEmail(email, nome, idade, mensagem) {
-  console.log("➡️  Enviando email...");
+  
+  try {
+    const msg = {
+      to: "miguel.costa@ufu.br", // Destino
+      from: process.env.EMAIL_FROM, // Deve ser um e-mail verificado no SendGrid
+      subject: `Candidatura de ${nome}, idade: ${idade} com email: ${email}`,
+      text: mensagem,
+    };
 
-  const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // SSL
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false
+    await sgMail.send(msg);
+    console.log("✅ Email enviado via SendGrid");
+
+    res.json({ sucesso: true, msg: "Email enviado!" });
+  } catch (err) {
+    console.log("❌ Erro ao enviar email:", err);
+    res.status(500).json({ sucesso: false, erro: err.message });
   }
-});
+};
 
 
 
