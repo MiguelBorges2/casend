@@ -10,9 +10,9 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 const app = express();
 app.use(cors({
-  origin: "http://localhost:5174", // porta do Vite
-  methods: ["POST",  "GET"],
-  allowedHeaders: ["Content-Type"],
+  origin: "*",  
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use(express.json());
 app.use("/paginas", express.static(path.join(__dirname, "paginas")));
