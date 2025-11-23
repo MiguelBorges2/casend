@@ -143,24 +143,7 @@ async function  enviaEmail(email, nome, idade, mensagem) {
 
 
 
-  try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: "miguel.costa@ufu.br",
-      subject: `Candidatura de ${nome}, idade: ${idade} com email: ${email} `, 
-      text: mensagem,
-    });
-
-    console.log("✅ Email enviado:", info);
-
-    return info;
-
-  } catch (err) {
-    console.log("❌ ERRO NO SENDMAIL:");
-    console.log(err);
-    throw err;
-  }
-}
+  
 
 app.listen(process.env.PORT || 3000, () =>
   console.log(`Servidor rodando`)
